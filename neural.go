@@ -90,12 +90,6 @@ func (nn *NeuralNetwork) forwardPass(inputs *matrix.Matrix) *matrix.Matrix {
 	return finalOutputs
 }
 
-func (nn *NeuralNetwork) query(input []float64) *matrix.Matrix {
-	inputs := matrix.NewMatrix(1, uint(len(input)))
-	copy(inputs.Data[0], input)
-	return nn.forwardPass(inputs)
-}
-
 func LoadMNIST(filename string) (*matrix.Matrix, []int) {
 	file, err := os.Open(filename)
 	if err != nil {
