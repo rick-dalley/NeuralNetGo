@@ -32,13 +32,15 @@ go run neural.go
 
 ## Usage:
 
-    1.	Data Preparation:
-    •	Ensure the MNIST dataset CSV files (mnist_train.csv, mnist_test.csv) are in the correct directory.
-    •	Update file paths in the code if necessary.
-    2.	Run Training:
-    •	Execute the program to train the network and observe the performance outputs.
-    3.	Profiling:
-    •	Use Go’s profiler (pprof) to analyze bottlenecks:
+1. Data Preparation:
+   • Ensure the MNIST dataset CSV files (mnist_train.csv, mnist_test.csv) are in the correct directory.
+   • Update file paths in the code if necessary.
+
+2. Run Training:
+   • Execute the program to train the network and observe the performance outputs.
+
+3. Profiling:
+   • Use Go’s profiler (pprof) to analyze bottlenecks:
 
 go run main.go -cpuprofile cpu.prof
 go tool pprof cpu.prof
