@@ -166,4 +166,6 @@ flat flat% sum% cum cum%
 
 ## Conclusion
 
-Switching to the gonum library provided a significant boost in performance and reduced the complexity of the code. To help others understand the trade-offs, I’ve left the original Matrix.Multiply implementations commented out in the code. These alternatives illustrate the evolution of the solution and highlight the benefits of using optimized libraries like gonum.
+Switching to the gonum library provided a significant boost in performance over the attempt at concurency. To help others understand the trade-offs, I’ve left the original Matrix.Multiply implementations commented out in the code. These alternatives illustrate the evolution of the solution and highlight the benefits of using optimized libraries like gonum.
+
+This also points out the importance of Matrix math in Neural Networks in general.
