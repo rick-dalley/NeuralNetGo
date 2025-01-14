@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"neural-net/activationFunctions"
 	"neural-net/matrix"
 	"os"
+	"runtime/pprof"
 	"strconv"
 )
 
@@ -128,6 +130,19 @@ func LoadMNIST(filename string) (*matrix.Matrix, []int) {
 }
 
 func main() {
+	// Create a CPU profile file
+	cpuProfile, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	defer cpuProfile.Close()
+
+	// Start CPU profiling
+	if err := pprof.StartCPUProfile(cpuProfile); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+
 	// Load MNIST data
 	inputMatrix, labels := LoadMNIST("mnist/mnist_train.csv")
 	fmt.Println("Data loaded successfully")
@@ -137,7 +152,7 @@ func main() {
 	hiddenNodes := 100
 	outputNodes := 10
 	learningRate := 0.3
-	epochs := uint(10)
+	epochs := uint(1)
 	digits := uint(10)
 	confidenceChanges := matrix.NewMatrix(epochs, digits)
 	// Initialize the neural network
@@ -147,6 +162,7 @@ func main() {
 	// Train the network
 	fmt.Println("Training...")
 	for epoch := uint(0); epoch < epochs; epoch++ {
+		fmt.Printf("Epoch: (%d)\n", epoch)
 		for i := uint(0); i < inputMatrix.Rows; i++ {
 			// Extract input row as a slice
 			inputRow := inputMatrix.Data[i]
@@ -160,15 +176,15 @@ func main() {
 
 			// Train the network
 			nn.train(inputRow, target)
-			// fmt.Printf(".")
 			output := nn.forwardPass(inputMatrix) // Query with the first input row
 			if confidenceChanges.Data[epoch][labels[i]] < output.Data[0][labels[i]] {
 				confidenceChanges.Data[epoch][labels[i]] = output.Data[0][labels[i]]
 			}
+			// fmt.Printf(".")
 		}
 		fmt.Println()
 		// Test the network
-		fmt.Println("Testing the network...")
+		fmt.Printf("\nresults:\n")
 		fmt.Println(confidenceChanges.Data[epoch])
 	}
 	fmt.Println("Training completed")

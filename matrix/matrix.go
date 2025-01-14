@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"golang.org/x/exp/rand"
+	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
@@ -55,21 +56,96 @@ func (m *Matrix) MultiplyScalar(multiplier float64) *Matrix {
 	return result
 }
 
+// func (m *Matrix) Multiply(other *Matrix) *Matrix {
+// 	if m.Cols != other.Rows {
+// 		panic(fmt.Sprintf("Matrix dimensions do not align for multiplication: m(%dx%d), other(%dx%d)",
+// 			m.Rows, m.Cols, other.Rows, other.Cols))
+// 	}
+
+// 	result := NewMatrix(m.Rows, other.Cols)
+// 	for i := uint(0); i < m.Rows; i++ {
+// 		for j := uint(0); j < other.Cols; j++ {
+// 			sum := 0.0
+// 			for k := uint(0); k < m.Cols; k++ {
+// 				sum += m.Data[i][k] * other.Data[k][j]
+// 			}
+// 			result.Data[i][j] = sum
+// 		}
+// 	}
+// 	return result
+// }
+
+// Multiply - using worker pool
+// func (m *Matrix) Multiply(other *Matrix) *Matrix {
+// 	if m.Cols != other.Rows {
+// 		panic(fmt.Sprintf("Matrix dimensions do not align for multiplication: m(%dx%d), other(%dx%d)",
+// 			m.Rows, m.Cols, other.Rows, other.Cols))
+// 	}
+
+// 	result := NewMatrix(m.Rows, other.Cols)
+// 	workerPool := make(chan struct{}, runtime.NumCPU()) // Limit concurrency to number of CPU cores
+// 	var wg sync.WaitGroup
+
+// 	for i := uint(0); i < m.Rows; i++ {
+// 		for j := uint(0); j < other.Cols; j++ {
+// 			wg.Add(1)
+// 			workerPool <- struct{}{} // Acquire a slot in the pool
+// 			go func(row, col uint) {
+// 				defer wg.Done()
+// 				defer func() { <-workerPool }() // Release the slot
+
+// 				sum := 0.0
+// 				for k := uint(0); k < m.Cols; k++ {
+// 					sum += m.Data[row][k] * other.Data[k][col]
+// 				}
+// 				result.Data[row][col] = sum
+// 			}(i, j)
+// 		}
+// 	}
+
+// 	wg.Wait()
+// 	return result
+// }
+
 func (m *Matrix) Multiply(other *Matrix) *Matrix {
 	if m.Cols != other.Rows {
 		panic(fmt.Sprintf("Matrix dimensions do not align for multiplication: m(%dx%d), other(%dx%d)",
 			m.Rows, m.Cols, other.Rows, other.Cols))
 	}
 
-	result := NewMatrix(m.Rows, other.Cols)
-	for i := uint(0); i < m.Rows; i++ {
-		for j := uint(0); j < other.Cols; j++ {
-			sum := 0.0
-			for k := uint(0); k < m.Cols; k++ {
-				sum += m.Data[i][k] * other.Data[k][j]
-			}
-			result.Data[i][j] = sum
-		}
+	// Convert `m` and `other` to gonum Dense matrices
+	flatM := flatten(m.Data)
+	flatOther := flatten(other.Data)
+	matM := mat.NewDense(int(m.Rows), int(m.Cols), flatM)
+	matOther := mat.NewDense(int(other.Rows), int(other.Cols), flatOther)
+
+	// Perform multiplication using gonum
+	matResult := mat.NewDense(int(m.Rows), int(other.Cols), nil)
+	matResult.Mul(matM, matOther)
+
+	// Convert the result back to our Matrix format
+	result := &Matrix{
+		Rows: uint(matResult.RawMatrix().Rows),
+		Cols: uint(matResult.RawMatrix().Cols),
+		Data: reshape(matResult.RawMatrix().Data, int(m.Rows), int(other.Cols)),
+	}
+	return result
+}
+
+// Helper function to flatten a 2D slice into a 1D slice
+func flatten(data [][]float64) []float64 {
+	flat := make([]float64, 0, len(data)*len(data[0]))
+	for _, row := range data {
+		flat = append(flat, row...)
+	}
+	return flat
+}
+
+// Helper function to reshape a 1D slice into a 2D slice
+func reshape(data []float64, rows, cols int) [][]float64 {
+	result := make([][]float64, rows)
+	for i := range result {
+		result[i] = data[i*cols : (i+1)*cols]
 	}
 	return result
 }
