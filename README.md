@@ -27,7 +27,7 @@ go get gonum.org/v1/gonum/mat
 3. Run the application:
 
 ```
-go run main.go
+go run neural.go
 ```
 
 ## Usage:
