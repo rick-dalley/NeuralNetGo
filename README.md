@@ -35,11 +35,10 @@ flat flat% sum% cum cum%
 
 #### 1. Making Matrix Multiplication Concurrent:
 
-    •	I attempted to parallelize the multiplication operation by processing rows concurrently.
-    •	Result: While this approach utilized Go’s concurrency, the overhead of goroutines and synchronization far outweighed the benefits, as the method’s scope was too small to justify the added complexity.
+• I attempted to parallelize the multiplication operation by processing rows concurrently.
+• Result: While this approach utilized Go’s concurrency, the overhead of goroutines and synchronization far outweighed the benefits, as the method’s scope was too small to justify the added complexity.
 
 ```Using concurrency
-
 neural-net % go tool pprof cpu.prof
 File: \_\_debug_bin2744135718
 Type: cpu
@@ -64,18 +63,17 @@ flat flat% sum% cum cum%
 
 #### 2. Integrating the gonum Library:
 
-    •	I replaced the custom multiplication implementation with the gonum library, a highly optimized Go library for numerical computations.
-    •	Two helper functions were added to:
-    •	Flatten the Matrix data for use with gonum.
-    •	Rehydrate the gonum result back into a custom Matrix format.
-    •	Result: The gonum library drastically improved performance, as it leverages optimized low-level operations for matrix math.
+• I replaced the custom multiplication implementation with the gonum library, a highly optimized Go library for numerical computations.
+• Two helper functions were added to:
+• Flatten the Matrix data for use with gonum.
+• Rehydrate the gonum result back into a custom Matrix format.
+• Result: The gonum library drastically improved performance, as it leverages optimized low-level operations for matrix math.
 
 #### Profiler Results
 
 Below is a summary of the profiling results before and after optimization:
 
 ```Using gonum
-
 neural-net % go tool pprof cpu.prof
 File: \_\_debug_bin1166781284
 Type: cpu
