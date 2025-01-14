@@ -1,2 +1,3 @@
 # Ignore MNIST training data file
 mnist/mnist_train.csv
+__debug_bin*
