@@ -56,7 +56,36 @@ While running the neural network, I observed that the training process in Go was
 The profiler revealed that the primary bottleneck was the matrix multiplication operation implemented in the Matrix.Multiply method. This method accounted for the vast majority of the execution time.
 
 ```Unoptimized
+neural-net % go tool pprof cpu.prof
+File: \_\_debug_bin2744135718
+Type: cpu
+Time: Jan 14, 2025 at 2:05pm (MST)
+Duration: 379.63s, Total samples = 327.98s (86.39%)
+Entering interactive mode (type "help" for commands, "o" for options)
+(pprof) top
+Showing nodes accounting for 322.86s, 98.44% of 327.98s total
+Dropped 121 nodes (cum <= 1.64s)
+flat flat% sum% cum cum%
+**322.32s 98.27% 98.27% 322.45s 98.31% neural-net/matrix.(*Matrix).Multiply**
+0.41s 0.13% 98.40% 1.72s 0.52% neural-net/activationFunctions.ApplyNew
+0.13s 0.04% 98.44% 1.81s 0.55% runtime.scanobject
+0 0% 98.44% 324.14s 98.83% main.(*NeuralNetwork).forwardPass
+0 0% 98.44% 325.43s 99.22% main.main
+0 0% 98.44% 1.81s 0.55% runtime.gcBgMarkWorker
+0 0% 98.44% 1.82s 0.55% runtime.gcBgMarkWorker.func2
+0 0% 98.44% 1.82s 0.55% runtime.gcDrain
+0 0% 98.44% 325.43s 99.22% runtime.main
+0 0% 98.44% 2.44s 0.74% runtime.systemstack
+```
 
+### Optimization Attempts
+
+#### 1. Making Matrix Multiplication Concurrent:
+
+• I attempted to parallelize the multiplication operation by processing rows concurrently.
+• Result: While this approach utilized Go’s concurrency, the overhead of goroutines and synchronization far outweighed the benefits, as the method’s scope was too small to justify the added complexity.
+
+```Concurrency
 neural-net % go tool pprof cpu.prof
 File: \_\_debug_bin3486075173
 Type: cpu
@@ -68,9 +97,9 @@ Showing nodes accounting for 547.23s, 94.30% of 580.31s total
 Dropped 279 nodes (cum <= 2.90s)
 Showing top 10 nodes out of 44
 flat flat% sum% cum cum%
-351.51s 60.57% 60.57% 351.52s 60.57% runtime.usleep
-120.77s 20.81% 81.38% 120.81s 20.82% runtime.pthread_cond_wait
-39.42s 6.79% 88.18% 145.69s 25.11% neural-net/matrix.(*Matrix).Multiply.func1
+<mark>351.51s 60.57% 60.57% 351.52s 60.57% runtime.usleep</mark>
+<mark>120.77s 20.81% 81.38% 120.81s 20.82% runtime.pthread_cond_wait</mark>
+**39.42s 6.79% 88.18% 145.69s 25.11% neural-net/matrix.(*Matrix).Multiply.func1**
 25.49s 4.39% 92.57% 25.49s 4.39% runtime.pthread_cond_signal
 2.57s 0.44% 93.01% 136.65s 23.55% runtime.lock2
 1.92s 0.33% 93.34% 6.72s 1.16% runtime.mallocgc
@@ -78,36 +107,6 @@ flat flat% sum% cum cum%
 1.32s 0.23% 93.89% 4.71s 0.81% runtime.unlock2
 1.20s 0.21% 94.09% 8.26s 1.42% runtime.newproc1
 1.19s 0.21% 94.30% 49.57s 8.54% neural-net/matrix.(\*Matrix).Multiply
-```
-
-### Optimization Attempts
-
-#### 1. Making Matrix Multiplication Concurrent:
-
-• I attempted to parallelize the multiplication operation by processing rows concurrently.
-• Result: While this approach utilized Go’s concurrency, the overhead of goroutines and synchronization far outweighed the benefits, as the method’s scope was too small to justify the added complexity.
-
-```Using concurrency
-neural-net % go tool pprof cpu.prof
-File: \_\_debug_bin2744135718
-Type: cpu
-Time: Jan 14, 2025 at 2:05pm (MST)
-Duration: 379.63s, Total samples = 327.98s (86.39%)
-Entering interactive mode (type "help" for commands, "o" for options)
-(pprof) top
-Showing nodes accounting for 322.86s, 98.44% of 327.98s total
-Dropped 121 nodes (cum <= 1.64s)
-flat flat% sum% cum cum%
-322.32s 98.27% 98.27% 322.45s 98.31% neural-net/matrix.(*Matrix).Multiply
-0.41s 0.13% 98.40% 1.72s 0.52% neural-net/activationFunctions.ApplyNew
-0.13s 0.04% 98.44% 1.81s 0.55% runtime.scanobject
-0 0% 98.44% 324.14s 98.83% main.(*NeuralNetwork).forwardPass
-0 0% 98.44% 325.43s 99.22% main.main
-0 0% 98.44% 1.81s 0.55% runtime.gcBgMarkWorker
-0 0% 98.44% 1.82s 0.55% runtime.gcBgMarkWorker.func2
-0 0% 98.44% 1.82s 0.55% runtime.gcDrain
-0 0% 98.44% 325.43s 99.22% runtime.main
-0 0% 98.44% 2.44s 0.74% runtime.systemstack
 ```
 
 #### 2. Integrating the gonum Library:
@@ -134,7 +133,7 @@ Showing nodes accounting for 65.19s, 95.21% of 68.47s total
 Dropped 150 nodes (cum <= 0.34s)
 Showing top 10 nodes out of 55
 flat flat% sum% cum cum%
-47.50s 69.37% 69.37% 47.50s 69.37% gonum.org/v1/gonum/internal/asm/f64.AxpyUnitary
+<mark>47.50s 69.37% 69.37% 47.50s 69.37% gonum.org/v1/gonum/internal/asm/f64.AxpyUnitary</mark>
 10.64s 15.54% 84.91% 58.14s 84.91% gonum.org/v1/gonum/blas/gonum.dgemmSerialNotNot
 1.77s 2.59% 87.50% 1.77s 2.59% runtime.usleep
 1.39s 2.03% 89.53% 1.39s 2.03% runtime.(*mspan).typePointersOfUnchecked
