@@ -6,7 +6,7 @@ While running the neural network, I observed that the training process in Go was
 
 The profiler revealed that the primary bottleneck was the matrix multiplication operation implemented in the Matrix.Multiply method. This method accounted for the vast majority of the execution time.
 
-## Unoptimized
+```Unoptimized
 
 neural-net % go tool pprof cpu.prof
 File: \_\_debug_bin3486075173
@@ -29,6 +29,7 @@ flat flat% sum% cum cum%
 1.32s 0.23% 93.89% 4.71s 0.81% runtime.unlock2
 1.20s 0.21% 94.09% 8.26s 1.42% runtime.newproc1
 1.19s 0.21% 94.30% 49.57s 8.54% neural-net/matrix.(\*Matrix).Multiply
+```
 
 ## Optimization Attempts
 
@@ -36,7 +37,7 @@ flat flat% sum% cum cum%
     •	I attempted to parallelize the multiplication operation by processing rows concurrently.
     •	Result: While this approach utilized Go’s concurrency, the overhead of goroutines and synchronization far outweighed the benefits, as the method’s scope was too small to justify the added complexity.
 
-## Using concurrency
+```Using concurrency
 
 neural-net % go tool pprof cpu.prof
 File: \_\_debug_bin2744135718
@@ -58,6 +59,7 @@ flat flat% sum% cum cum%
 0 0% 98.44% 1.82s 0.55% runtime.gcDrain
 0 0% 98.44% 325.43s 99.22% runtime.main
 0 0% 98.44% 2.44s 0.74% runtime.systemstack
+```
 
     2.	Integrating the gonum Library:
     •	I replaced the custom multiplication implementation with the gonum library, a highly optimized Go library for numerical computations.
@@ -70,7 +72,7 @@ Profiler Results
 
 Below is a summary of the profiling results before and after optimization:
 
-## Using gonum
+```Using gonum
 
 neural-net % go tool pprof cpu.prof
 File: \_\_debug_bin1166781284
@@ -93,7 +95,8 @@ flat flat% sum% cum cum%
 0.60s 0.88% 93.79% 0.91s 1.33% encoding/csv.(*Reader).readRecord
 0.54s 0.79% 94.58% 1.48s 2.16% main.LoadMNIST
 0.43s 0.63% 95.21% 0.43s 0.63% runtime.memmove
+```
 
-Conclusion
+## Conclusion
 
 Switching to the gonum library provided a significant boost in performance and reduced the complexity of the code. To help others understand the trade-offs, I’ve left the original Matrix.Multiply implementations commented out in the code. These alternatives illustrate the evolution of the solution and highlight the benefits of using optimized libraries like gonum.
