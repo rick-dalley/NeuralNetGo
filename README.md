@@ -2,7 +2,7 @@
 
 While running the neural network, I observed that the training process in Go was taking significantly longer than an equivalent implementation in C++. To identify the bottleneck, I used the Go profiler (pprof) and analyzed the results.
 
-## Profiler Findings
+### Profiler Findings
 
 The profiler revealed that the primary bottleneck was the matrix multiplication operation implemented in the Matrix.Multiply method. This method accounted for the vast majority of the execution time.
 
@@ -31,9 +31,10 @@ flat flat% sum% cum cum%
 1.19s 0.21% 94.30% 49.57s 8.54% neural-net/matrix.(\*Matrix).Multiply
 ```
 
-## Optimization Attempts
+### Optimization Attempts
 
-    1.	Making Matrix Multiplication Concurrent:
+#### 1. Making Matrix Multiplication Concurrent:
+
     •	I attempted to parallelize the multiplication operation by processing rows concurrently.
     •	Result: While this approach utilized Go’s concurrency, the overhead of goroutines and synchronization far outweighed the benefits, as the method’s scope was too small to justify the added complexity.
 
@@ -61,14 +62,15 @@ flat flat% sum% cum cum%
 0 0% 98.44% 2.44s 0.74% runtime.systemstack
 ```
 
-    2.	Integrating the gonum Library:
+#### 2. Integrating the gonum Library:
+
     •	I replaced the custom multiplication implementation with the gonum library, a highly optimized Go library for numerical computations.
     •	Two helper functions were added to:
     •	Flatten the Matrix data for use with gonum.
     •	Rehydrate the gonum result back into a custom Matrix format.
     •	Result: The gonum library drastically improved performance, as it leverages optimized low-level operations for matrix math.
 
-Profiler Results
+#### Profiler Results
 
 Below is a summary of the profiling results before and after optimization:
 
