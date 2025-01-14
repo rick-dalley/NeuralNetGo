@@ -1,3 +1,52 @@
+# Neural Netork in Go
+
+This project implements a basic neural network in Go, designed to classify handwritten digits from the MNIST dataset. It explores various approaches to optimize performance, including custom matrix multiplication and integrating the gonum library for numerical computations.
+
+## Features:
+
+• A simple feedforward neural network with one hidden layer.
+• Training on the MNIST dataset.
+• Profiling and optimization of matrix operations.
+• Comparative analysis of custom matrix math versus gonum.
+
+## Installation:
+
+1. Clone the repository:
+
+```
+git clone https://github.com/your-username/NeuralNetGo.git
+cd NeuralNetGo
+```
+
+2. Install dependencies:
+
+```
+go get gonum.org/v1/gonum/mat
+```
+
+3. Run the application:
+
+```
+go run main.go
+```
+
+## Usage:
+
+    1.	Data Preparation:
+    •	Ensure the MNIST dataset CSV files (mnist_train.csv, mnist_test.csv) are in the correct directory.
+    •	Update file paths in the code if necessary.
+    2.	Run Training:
+    •	Execute the program to train the network and observe the performance outputs.
+    3.	Profiling:
+    •	Use Go’s profiler (pprof) to analyze bottlenecks:
+
+go run main.go -cpuprofile cpu.prof
+go tool pprof cpu.prof
+
+## License:
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+
 ## Performance Insights and Optimization Journey
 
 While running the neural network, I observed that the training process in Go was taking significantly longer than an equivalent implementation in C++. To identify the bottleneck, I used the Go profiler (pprof) and analyzed the results.
