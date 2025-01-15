@@ -1,14 +1,12 @@
 package main
 
 import (
-	"encoding/csv"
 	"fmt"
-	"log"
 	"neural-net/activationFunctions"
 	"neural-net/matrix"
 	"os"
-	"runtime/pprof"
 	"strconv"
+	"strings"
 )
 
 // neuralNetConfig defines our neural network
@@ -90,32 +88,63 @@ func (nn *NeuralNetwork) forwardPass(inputs *matrix.Matrix) *matrix.Matrix {
 	return finalOutputs
 }
 
+// reading the records one at a time
+// func LoadMNIST(filename string) (*matrix.Matrix, []int) {
+// 	file, err := os.Open(filename)
+// 	if err != nil {
+// 		panic(fmt.Sprintf("Error opening file: %v", err))
+// 	}
+// 	defer file.Close()
+
+// 	reader := csv.NewReader(file)
+// 	records, err := reader.ReadAll()
+// 	if err != nil {
+// 		panic(fmt.Sprintf("Error reading CSV: %v", err))
+// 	}
+
+// 	rows := len(records)
+// 	cols := 784 // MNIST images are 28x28 flattened
+// 	inputMatrix := matrix.NewMatrix(uint(rows), uint(cols))
+// 	labels := make([]int, rows)
+
+// 	for i, record := range records {
+// 		// First value is the label
+// 		label, _ := strconv.Atoi(record[0])
+// 		labels[i] = label
+
+// 		// Remaining values are the input data
+// 		for j := 1; j <= cols; j++ {
+// 			pixel, _ := strconv.Atoi(record[j])
+// 			inputMatrix.Data[i][j-1] = float64(pixel) / 255.0 // Normalize
+// 		}
+// 	}
+
+// 	return inputMatrix, labels
+// }
+
+// optimize version of LoadMNIST
 func LoadMNIST(filename string) (*matrix.Matrix, []int) {
-	file, err := os.Open(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
-		panic(fmt.Sprintf("Error opening file: %v", err))
-	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
-	if err != nil {
-		panic(fmt.Sprintf("Error reading CSV: %v", err))
+		panic(fmt.Sprintf("Error reading file: %v", err))
 	}
 
-	rows := len(records)
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	rows := len(lines)
 	cols := 784 // MNIST images are 28x28 flattened
 	inputMatrix := matrix.NewMatrix(uint(rows), uint(cols))
 	labels := make([]int, rows)
 
-	for i, record := range records {
+	for i, line := range lines {
+		values := strings.Split(line, ",")
+
 		// First value is the label
-		label, _ := strconv.Atoi(record[0])
+		label, _ := strconv.Atoi(values[0])
 		labels[i] = label
 
 		// Remaining values are the input data
 		for j := 1; j <= cols; j++ {
-			pixel, _ := strconv.Atoi(record[j])
+			pixel, _ := strconv.Atoi(values[j])
 			inputMatrix.Data[i][j-1] = float64(pixel) / 255.0 // Normalize
 		}
 	}
@@ -125,17 +154,17 @@ func LoadMNIST(filename string) (*matrix.Matrix, []int) {
 
 func main() {
 	// Create a CPU profile file
-	cpuProfile, err := os.Create("cpu.prof")
-	if err != nil {
-		log.Fatal("could not create CPU profile: ", err)
-	}
-	defer cpuProfile.Close()
+	// cpuProfile, err := os.Create("cpu.prof")
+	// if err != nil {
+	// 	log.Fatal("could not create CPU profile: ", err)
+	// }
+	// defer cpuProfile.Close()
 
-	// Start CPU profiling
-	if err := pprof.StartCPUProfile(cpuProfile); err != nil {
-		log.Fatal("could not start CPU profile: ", err)
-	}
-	defer pprof.StopCPUProfile()
+	// // Start CPU profiling
+	// if err := pprof.StartCPUProfile(cpuProfile); err != nil {
+	// 	log.Fatal("could not start CPU profile: ", err)
+	// }
+	// defer pprof.StopCPUProfile()
 
 	// Load MNIST data
 	inputMatrix, labels := LoadMNIST("mnist/mnist_train.csv")
@@ -149,6 +178,7 @@ func main() {
 	epochs := uint(1)
 	digits := uint(10)
 	confidenceChanges := matrix.NewMatrix(epochs, digits)
+	mnistRecords := inputMatrix.Rows
 	// Initialize the neural network
 	nn := newNeuralNetwork(inputNodes, hiddenNodes, outputNodes, learningRate)
 	fmt.Println("Neural network initialized")
@@ -156,8 +186,8 @@ func main() {
 	// Train the network
 	fmt.Println("Training...")
 	for epoch := uint(0); epoch < epochs; epoch++ {
-		fmt.Printf("Epoch: (%d)\n", epoch)
-		for i := uint(0); i < inputMatrix.Rows; i++ {
+		fmt.Printf("Epoch: (%d)\n Processing %d rows\n", epoch, mnistRecords)
+		for i := uint(0); i < mnistRecords; i++ {
 			// Extract input row as a slice
 			inputRow := inputMatrix.Data[i]
 
@@ -174,7 +204,9 @@ func main() {
 			if confidenceChanges.Data[epoch][labels[i]] < output.Data[0][labels[i]] {
 				confidenceChanges.Data[epoch][labels[i]] = output.Data[0][labels[i]]
 			}
-			// fmt.Printf(".")
+			if i%1000 == 0 {
+				fmt.Printf(".")
+			}
 		}
 		fmt.Println()
 		// Test the network
